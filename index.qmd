@@ -1,0 +1,1354 @@
+---
+title: "ESTADÍSTICOS"
+subtitle: "Medidas de Resumen"
+date: today 
+author: 
+  - name: Dagoberto Salgado Horta 
+    affiliation: Universidad del Tolima
+    affiliation-url: https://www.ut.edu.co/
+title-block-banner: "#81d3de"
+lang: es
+# botón TAB
+format: 
+  html:
+    page-layout: full
+    toc: true 
+    toc-expand: 3
+    toc-location: left
+    number-sections: true
+    code-fold: true
+    code-summary: "Ver código"
+    html-math-method: katex
+    smooth-scroll: true
+    link-external-newwindow: true
+    theme: sketchy
+    highlight-style: monokai
+editor: visual
+knitr:
+  opts_chunk: 
+    message: false
+    warning: false
+    fig.align: "center"
+---
+
+```{=html}
+<style type="text/css">
+ .tab{ text-indent: 40px; }
+ body{ font-size: 130%; }
+body {text-align: justify}
+</style>
+```
+
+**Librerias**
+
+```{r}
+if(!require(tidyverse)){
+  install.packages("tidyverse")}
+library(tidyverse)
+
+if(!require(palmerpenguins)){
+  install.packages("palmerpenguins")}
+library(palmerpenguins)
+
+if(!require(psych)){
+  install.packages("psych")}
+library(psych)
+
+if(!require(modeest)){
+  install.packages("modeest")}
+library(modeest)
+
+if(!require(ggthemes)){
+  install.packages("ggthemes")}
+library(ggthemes)
+
+if(!require(ggplot2)){
+  install.packages("ggplot2")}
+library(ggplot2)
+
+if(!require(e1071)){
+  install.packages("e1071")}
+library(e1071)
+```
+
+# .ESTADISTICOS
+
+En el contexto de las ciencias, la estadística es una disciplina que se ocupa de la recoleccón, análisis e interpretación de datos. Los estadísticos son las medidas de resumen o describen aspectos clave de un conjunto de datos. Estas medidas permiten hacer inferencias, identificar patrones, y comprender la variabilidad de los datos.
+
+A continuación te explico algunos de los estadísticos más comunes:
+
+# .Medidas de tendencia central:
+
+Estas medidas indican el valor central o típico de un conjunto de datos.
+
+## .Medias
+
+**Tipos de medias**
+
+**Media aritmética:** Es el promedio de todos los valores. Se calcula sumado todos los valores y dividiendo entre la cantidad total de datos.
+
+*Datos no Agrupados*
+
+Formula:
+
+$$ \bar{x}=\frac{\sum x_{i}}{n}$$
+
+```{r}
+set.seed(222)
+datos <- sample(1:10, size = 20, replace = TRUE)
+datos
+```
+
+```{r}
+palmerpenguins::penguins$body_mass_g %>% mean(na.rm = TRUE)
+```
+
+```{r}
+(palmerpenguins::penguins$body_mass_g %>%  sum(na.rm = TRUE))/342
+```
+
+```{r}
+sum(datos)/length(datos)
+mean(datos)
+```
+
+```{r}
+tibble(x = 1:length(datos), y = datos) %>% 
+  ggplot() +
+  geom_hline(yintercept = mean(datos), color = 2
+             , linetype = "dashed") + 
+  geom_segment(aes(x = x, xend = x, y = mean(datos), yend = datos)) + 
+  geom_point(aes(x = x, y = datos), color = 2, size = 4) + 
+  scale_y_continuous(breaks = seq(0, 10, by = 2)) + 
+  labs(
+    x = "", y = "Datos"
+  )
+```
+
+*Datos Agrupados*
+
+Formula:
+
+$$\bar{y}=\frac{\sum y_{i}* n_{i}}{n}$$ $$n=\sum n_{i}$$
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+peso
+```
+
+```{r}
+interv = cut(x = peso, breaks = seq(43, 79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>%
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45, 77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+sum(tb$mifi)/length(peso) #Estimado
+```
+
+```{r}
+mean(peso)
+```
+
+**Media Geométrica:** Es una medida de tendencia central que se utiliza principalmente cuadno se desea calcular un valor representativo de un conjunto de datos que se están multiplicanco o que se tienen un crecimiento o cambio proporcional. Es especialmente útil en contextos donde los datos varían en porcentaje o tasas de crecimiento, como en finanzas o en estudios de crecimiento poblacional.
+
+A diferencia de la media aritmética que suma todos los valores y luego los divide entre el número de elementos, la media geométrica se calcula multiplicando todos los valores y luego extrayendo la raíz n-ésima del producto, donde n es el número de datos en el conjunto.
+
+Formula:
+
+$$G=\sqrt[n]{X_{1} * X_{2} * X_{3} * ... * X^{n}}$$
+
+*Datos no Agrupados*
+
+```{r}
+x <- c(1:10, size = 5000, replace = TRUE)
+prod(x)^(1/length(x))
+exp(mean(log(x)))
+```
+
+```{r}
+psych::geometric.mean(x)
+```
+
+```{r}
+x <- c(5,8.2,6.1)
+1+x/100
+(psych::geometric.mean(1+x/100)-1)*100
+```
+
+*Datos Agrupados*
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+peso
+```
+
+```{r}
+interv = cut(x = peso, breaks = seq(43, 79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>%
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45, 77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+prod(tb$mi^tb$fi)^(1/length(peso))
+```
+
+$$exp(\sum (f_{1}*ln m_{i})/n)$$
+
+```{r}
+exp(sum(tb$fi*log(tb$mi))/length(peso))
+```
+
+**Media Armónica:** Es una medida de tendencia central que se utiliza en situaciones dode los datos representan tasas o ratios. A diferencia de la media aritmética que es mas comúnmente utilizada para conjuntos de datos generales, la media armónica es especialmente útil cuando se trata de promediar tasas de cambio, velocidades, precios unitarios o cualquier otro tipo de relación.
+
+Formula:
+
+$$H=\frac{n}{\frac{1}{X^{_{1}}}+\frac{1}{X^{_{2}}}+ ... +\frac{1}{X^{_{n}}}}$$
+
+*Datos no Agrupados*
+
+```{r}
+x <- c(4,7,2,3,4,6)
+length(x)/sum(1/x)
+psych::harmonic.mean(x)
+```
+
+```{r}
+palmerpenguins::penguins$bill_length_mm %>% psych::harmonic.mean(na.rm = TRUE)
+```
+
+*Datos Agrupados*
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+peso
+```
+
+```{r}
+interv = cut(x = peso, breaks = seq(43, 79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>%
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45, 77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+psych::harmonic.mean(peso)
+200/sum(tb$fi/tb$mi)
+```
+
+```{r}
+# Voy de una ciudad A a una ciudad B y me regreso (están separados 120 km entre sí)
+# De ida me voy a 40 km/h y me regreso a 60 km/h.
+mean(c(40, 60))
+psych::harmonic.mean(c(40, 60))
+120/40 #ida
+120/60 #regreso
+240/5
+```
+
+**Media aritmética ponderada**: La media es un valor que tiene múltiples usos en el día a día, por lo que es importante conocer cómo se calcula y cuál es el significado del valor obtenido. Entre los distintos tipos de medias, la media ponderada otorga distinta importancia a diferentes valores sobre los que se calcula.
+
+Formula:
+
+$$W=\frac{\sum ^{n}_{i=1}w_{i}X_{i}}{\sum ^{n}_{i=1}w_{i}}$$
+
+*Datos no agrupados*
+
+```{r}
+# Evaluacióm 50%, trabajo 30%, participación de clase 10%, puntualidad 10%
+p <- c(50,30,10,10)
+x <- c(2.5,4.0,2.0,5.0)
+sum(x*p)/sum(p)
+weighted.mean(x = x, w = p)
+```
+
+```{r}
+# puntualidad:5, presentación personal: 10, hoja de vida: 20, examen de conocimientos: 30
+p <- c(5,10,20,30)
+x <- c(5,8,10,25)
+sum(x*p)/sum(p)
+weighted.mean(x = x, w = p)
+```
+
+*Datos agrupados*
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+interv = cut(x = peso, breaks = seq(43,79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45,77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+sum(tb$mifi)/200
+sum(tb$mi*tb$hi)
+mean(peso)
+```
+
+**Media ponderada normalizada**
+
+Para cada peso **wi** del dato **xi** se define su peso normalizado como
+
+$$w'_{i}=\frac{w_{i}}{\sum ^{n}_{k=1}w_{k}}$$
+
+Se tiene que la suma de los pesos normalizados es 1 y, por lo tanto, la medida ponderada (con pesos **wi**) es
+
+$$\bar{x}=\sum_{k=1}^{n}x_{i}*w'_{i}$$
+
+```{r}
+p <- c(5,10,20,30)/65
+sum(p)
+x <- c(5,8,10,25)
+sum(x*p)
+```
+
+```{r}
+set.seed(555)
+personas <- round(rnorm(250, mean = 4, sd = 1))
+tabla <- tibble(Personas = personas) %>% 
+  group_by(Personas) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    hi = round(fi/sum(fi), 4),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    xifi = Personas*fi
+  )
+tabla
+```
+
+```{r}
+mean(personas)
+sum(tabla$xifi)/250
+sum(tabla$Personas*tabla$hi)
+```
+
+## .Moda
+
+La **moda** es el valor o los valores que aparecen con mayor frecuencia en un conjunto de datos. Es una de las medidas de tendencia central junto con la media y la mediana. La moda se utiliza para describir el valor más común en un conjunto de observaciones.
+
+*Datos Agrupados*
+
+Formula:
+
+$$ Moda= L_{1}+(\frac{\Delta _{1}}{\Delta _{1}+\Delta _{2}})C$$ **Ejemplo 1**
+
+```{r}
+set.seed(55)
+votacion <- sample(c("Pedro", "María", "Daniel", "Ana"), 
+                   size = 40, replace = TRUE)
+table(votacion)
+```
+
+```{r}
+tibble(votacion = votacion) %>% 
+  ggplot(aes(x = votacion)) +
+  geom_bar()
+```
+
+**Ejemplo 2**
+
+```{r}
+n <- 10000
+set.seed(777)
+dados <- sample(1:6, size = n, replace = TRUE) + sample(1:6, size = n, replace = TRUE)
+tibble(dados = dados) %>% 
+  ggplot(aes(x = as.factor(dados))) +
+  geom_bar()
+```
+
+```{r}
+names(which.max(table(dados)))
+```
+
+**Ejemplo 3**
+
+```{r}
+mlv(dados)
+mlv(votacion)
+```
+
+**Ejemplo 4**
+
+```{r}
+pen <- palmerpenguins::penguins %>% drop_na()
+pen
+```
+
+```{r}
+names(which.max(table(pen$bill_length_mm)))
+```
+
+```{r}
+pen$bill_length_mm %>% summary()
+```
+
+```{r}
+interv <- cut(pen$bill_length_mm, breaks = seq(32, 60, by = 2.8))
+tibble(Intervalos = interv) %>% 
+group_by(Intervalos) %>% count()
+```
+
+```{r}
+pen %>% 
+  ggplot(aes(x = bill_length_mm)) +
+  geom_histogram(breaks = seq(32, 60, by = 2.8))
+scale_x_continuous(breaks = seq(32, 60, by = 2.8))
+```
+
+```{r}
+48.8 + (59-55)/((59-55)+(59-15))*2.8
+```
+
+```{r}
+mlv(pen$bill_length_mm, method = "meanshift")
+```
+
+```{r}
+pen %>% 
+  ggplot(aes(x = bill_length_mm)) +
+  geom_density() +
+  geom_vline(xintercept = 46.55969, color = "red") +
+scale_x_continuous(breaks = seq(32, 60, by = 2.8))
+```
+
+```{r}
+mlv(as.numeric(pen$body_mass_g), method = "meanshift")
+```
+
+```{r}
+pen %>% 
+  ggplot(aes(x = body_mass_g)) +
+  geom_density() +
+  geom_vline(xintercept = 3658.442, color = "red") +
+scale_x_continuous(breaks = seq(32, 60, by = 2.8))
+```
+
+## .Mediana
+
+En el ambito de la *estadística*, la **mediana** representa el valor de la variable de posición central en un conjunto de datos ordenados.
+
+**Datos no Agrupados**
+
+*Si n es impar*
+
+Formula:
+
+$$ x=x_{((n+1)/2)}$$
+
+-   
+
+```{r}
+set.seed(33)
+datos <- sample(1:100, size = 55, replace = TRUE)
+datos
+```
+
+```{r}
+sort(datos)
+```
+
+```{r}
+median(datos)
+```
+
+```{r}
+n <- length(datos)
+sort(datos)[(n+1)/2]
+```
+
+-   
+
+```{r}
+set.seed(444)
+datos <- sample(1:100, size = 15, replace = TRUE)
+datos
+```
+
+```{r}
+sort(datos)
+```
+
+```{r}
+median(datos)
+```
+
+```{r}
+tibble(x = 1:length(datos), y = sort(datos)) %>% 
+  ggplot(aes(x = x, y = y)) +
+  geom_hline(yintercept = median(datos), color = 2
+             , linetype = "dashed") +
+  geom_point(color = 2, size = 3) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  labs(
+    x = "", y = "Datos"
+  )
+```
+
+*Si n es par*
+
+Formula:
+
+$$ x=\frac{x_{(n/2)}+ x_{((n/2)+1)}}{2}$$
+
+```{r}
+set.seed(33)
+datos <- sample(1:100, size = 60, replace = TRUE)
+datos
+```
+
+```{r}
+sort(datos)
+```
+
+```{r}
+median(datos)
+```
+
+```{r}
+n <- length(datos)
+(sort(datos)[n/2] + sort(datos)[n/2+1])/2
+```
+
+```{r}
+tibble(x = 1:length(datos), y = sort(datos)) %>% 
+  ggplot(aes(x = x, y = y)) +
+  geom_hline(yintercept = median(datos), color = 2
+             , linetype = "dashed") +
+  geom_point(color = 2, size = 3) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  labs(
+    x = "", y = "Datos"
+  )
+```
+
+**Ejemplo**
+
+```{r}
+pen <- palmerpenguins::penguins %>% drop_na()
+pen
+```
+
+```{r}
+median(pen$bill_length_mm)
+```
+
+```{r}
+median(palmerpenguins::penguins$bill_length_mm, na.rm = TRUE)
+```
+
+**Datos Agrupados**
+
+formula:
+
+$$M_{e}=L_{i}+\frac{\frac{N}{2}-F_{i-1}}{f_{i}}*a_{i}$$
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+interv = cut(x = peso, breaks = seq(43, 79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45, 77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+peso
+```
+
+```{r}
+59 + (200/2-80)/(64)*4
+```
+
+```{r}
+median(peso)
+```
+
+# .Medidas de posición
+
+## .Cuantiles
+
+Los **cuantiles** son medidas estadísticas que dividen un conjunto de datos ordenados en partes iguales, de manera que cada parte contenga la misma cantidad de datos. Son herramientas útiles para analizar y describir la distribución de los datos.
+
+```{r}
+set.seed(1)
+n <- 250
+q <- 10
+x <- sort(round(rnorm(n, mean = 40, sd = 8)))
+color <- floor(q*(1:n)/(n+1)) + 1
+tibble(x = x, color = factor(color)) %>% 
+  ggplot(aes(x = x)#, fill = color)
+         ) +
+  geom_dotplot(binwidth = 1, show.legend = FALSE, )+
+  scale_x_continuous(breaks = seq(0, 80, by = 2)) +
+  theme(ggthemes::theme_fivethirtyeight()) +
+  theme(
+    axis.txet.y = element_blank(),
+    axis.title = element_blank()
+  )
+```
+
+```{r}
+set.seed(1)
+n <- 250
+q <- 2
+x <- sort(round(rnorm(n, mean = 40, sd = 8)))
+color <- floor(q*(1:n)/(n+1)) + 1
+tibble(x = x, color = factor(color)) %>% 
+  ggplot(aes(x = x, fill = color)
+         ) +
+  geom_dotplot(binwidth = 1, show.legend = FALSE, )+
+  scale_x_continuous(breaks = seq(0, 80, by = 2)) +
+  theme(ggthemes::theme_fivethirtyeight()) +
+  theme(
+    axis.txet.y = element_blank(),
+    axis.title = element_blank()
+  )
+```
+
+**Datos no Agrupados**
+
+**Cuartil**
+
+Formula:
+
+$$Q_{i}=\frac{i(n+1)}{4}, i \epsilon {(1,2,3)}$$
+
+*Ejemplo*
+
+```{r}
+set.seed(1)
+n <- 250
+q <- 4
+x <- sort(round(rnorm(n, mean = 40, sd = 8)))
+color <- floor(q*(1:n)/(n+1)) + 1
+tibble(x = x, color = factor(color)) %>% 
+  ggplot(aes(x = x, fill = color)
+         ) +
+  geom_dotplot(binwidth = 1, show.legend = FALSE, )+
+  scale_x_continuous(breaks = seq(0, 80, by = 2)) +
+  theme(ggthemes::theme_fivethirtyeight()) +
+  theme(
+    axis.txet.y = element_blank(),
+    axis.title = element_blank()
+  )
+```
+
+```{r}
+3*(250+1)/4
+```
+
+```{r}
+x[c(188,189)]
+```
+
+```{r}
+1*(250+1)/4
+```
+
+```{r}
+x[c(62,63)]
+```
+
+**Quintil**
+
+Formula:
+
+$$Qu_{i}= \frac{i(n+1)}{5} ,i \epsilon {(1,2,3,4)}$$
+
+*Ejemplo*
+
+```{r}
+set.seed(1)
+n <- 250
+q <- 5
+x <- sort(round(rnorm(n, mean = 40, sd = 8)))
+color <- floor(q*(1:n)/(n+1)) + 1
+tibble(x = x, color = factor(color)) %>% 
+  ggplot(aes(x = x, fill = color)
+         ) +
+  geom_dotplot(binwidth = 1, show.legend = FALSE, )+
+  scale_x_continuous(breaks = seq(0, 80, by = 2)) +
+  theme(ggthemes::theme_fivethirtyeight()) +
+  theme(
+    axis.txet.y = element_blank(),
+    axis.title = element_blank()
+  )
+```
+
+```{r}
+3*(250+1)/5
+```
+
+```{r}
+x[c(150,151)]
+```
+
+**Decil**
+
+Formula:
+
+$$D_{i}= \frac{i(n+1)}{10}, i\epsilon (1,2,...,9)$$
+
+*Ejemplo*
+
+```{r}
+set.seed(1)
+n <- 250
+q <- 10
+x <- sort(round(rnorm(n, mean = 40, sd = 8)))
+color <- floor(q*(1:n)/(n+1)) + 1
+tibble(x = x, color = factor(color)) %>% 
+  ggplot(aes(x = x, fill = color)
+         ) +
+  geom_dotplot(binwidth = 1, show.legend = FALSE, )+
+  scale_x_continuous(breaks = seq(0, 80, by = 2)) +
+  theme(ggthemes::theme_fivethirtyeight()) +
+  theme(
+    axis.txet.y = element_blank(),
+    axis.title = element_blank()
+  )
+```
+
+```{r}
+9*(250+1)/10
+```
+
+```{r}
+x[c(225,226)]
+```
+
+```{r}
+50+0.9*(51-50)
+```
+
+**Percentiles**
+
+Formula:
+
+$$P_{i}=\frac{i(n+1)}{100}, 1\epsilon (1,2,...,99)$$
+
+**Datos Agrupados**
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+interv = cut(x = peso, breaks = seq(43,79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45,77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+**Cuartil**
+
+$$Q_{i}=L_{i}+\frac{i*n/4-F_{i-1}}{f_{i}}a_{i}, i \epsilon {(1,2,3)}$$
+
+*Tercer cuartil*
+
+```{r}
+3*200/4 #(63,67]
+```
+
+```{r}
+63+(3*200/4-144)/43*4
+```
+
+*En R:*
+
+```{r}
+quantile(x = peso, 3/4)
+```
+
+```{r}
+quantile(x = peso, c(1,2,3)/4)
+```
+
+```{r}
+quantile(x, 3/4, type = 3)
+```
+
+**Quintil**
+
+$$Qu_{i}=L_{i}+\frac{i*n/5-F_{i-1}}{f_{i}}a_{i}, i \epsilon {(1,2,3,4)}$$
+
+*Tercer quintil:*
+
+```{r}
+3*200/5 # (59,63]
+```
+
+```{r}
+59+(3*200/5-80)/64*4
+```
+
+*En R:*
+
+```{r}
+quantile(x = peso, 3/5)
+```
+
+```{r}
+quantile(x = peso, c(1,2,3,5)/5)
+```
+
+```{r}
+quantile(x, 3/5, type = 3)
+```
+
+**Decil**
+
+$$D_{i}=L_{i} + \frac{i*n/10-F_{i-1}}{f_{i}}a_{i}, i\epsilon (1,2,...,9)$$
+
+*Tercer decil:*
+
+```{r}
+3*200/10 # (55,59]
+```
+
+```{r}
+55+(3*200/10-31)/57*4
+```
+
+*En R:*
+
+```{r}
+quantile(x = peso, 3/10)
+```
+
+```{r}
+quantile(x = peso, c(1:9)/10)
+```
+
+```{r}
+quantile(x, 8/10, type = 8)
+```
+
+**Percentil**
+
+$$P_{i}=L_{i}+\frac{i*n/100-F_{i-1}}{f_{i}}a_{i}, 1\epsilon (1,2,...,99)$$
+
+*Tercer percentil*
+
+```{r}
+3*200/100 # (47,51]
+```
+
+```{r}
+47+(3*200/100-1)/49*4
+```
+
+*En R:*
+
+```{r}
+quantile(x = peso, 3/100)
+```
+
+```{r}
+quantile(x = peso, c(1:99)/100)
+```
+
+```{r}
+quantile(x, 3/100, type = 3)
+```
+
+# .Medidas de dispersión
+
+## .Varianza
+
+La varianza es una medida de dispersión que representa la variabilidad de una serie de datos con respecto a su media. Formalmente, se calcula como la suma de los cuadrados de los residuos dividida por las observaciones totales.
+
+*Datos no agrupados*
+
+Formula para varianza poblacional:
+
+$$\sigma ^{2}=\frac{\sum ^{n}_{i=1}\left ( x_{i}-\bar{x} \right )^{2}}{n}$$
+
+```{r}
+set.seed(222)
+x <- sample(10:50, size = 50, replace = TRUE)
+x
+```
+
+```{r}
+varpob <- sum((x - mean(x))^2)/length(x)
+varpob
+```
+
+Formula para varianza muestral:
+
+$$ \delta ^{2}= \frac{\sum ^{n}_{i=1}\left ( x_{i}-\bar{x} \right )^{2}}{n-1}$$
+
+```{r}
+set.seed(222)
+x <- sample(10:50, size = 50, replace = TRUE)
+x
+```
+
+```{r}
+varmue <- sum((x - mean(x))^2)/(length(x)-1)
+varmue
+```
+
+```{r}
+var(x) #varianza muestral
+var(x)*(length(x)-1)/length(x) #varianza poblacional
+```
+
+*Datos agrupados*
+
+Formula para varianza poblacional:
+
+$$\sigma ^{2}=\frac{\sum ^{n}_{i=1}\left ( m_{i}-\mu  \right )^{2}f_{i}}{n}$$
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+interv = cut(x = peso, breaks = seq(43,79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45,77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+prompeso <- sum(tb$mifi)/200
+prompeso
+```
+
+```{r}
+prompeso <- sum(tb$mifi)/200
+sum((tb$mi - prompeso)^2*tb$fi)/(199)
+var(peso) #Utiliza todos los datos sin operación
+```
+
+Formula para varianza muestral:
+
+$$\delta ^{2}= \frac{\sum ^{n}_{i=1}\left ( m_{i}-\bar{x} \right )^{2}f_{i}}{n-1}$$
+
+```{r}
+set.seed(555)
+personas <- round(rnorm(250, mean = 4, sd = 1))
+tabla <- tibble(Personas = personas) %>% 
+  group_by(Personas) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    hi = round(fi/sum(fi), 4),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    xifi = Personas*fi
+  )
+tabla
+```
+
+```{r}
+propersonas <- sum(tabla$xifi)/250
+propersonas
+```
+
+```{r}
+propersonas <- sum(tabla$xifi)/250
+sum((tabla$Personas - propersonas)^2*tabla$fi)/(249)
+var(personas)
+```
+
+## .Desviación estándar
+
+La desviación estándar es una medida de extensión o variabilidad en la estadística descriptiva. Se utiliza para calcular la variación o dispersión en la que los puntos de datos individuales difieren de la media.
+
+*Datos no agrupados*
+
+Formula para desviación estándar poblacional:
+
+$$\sigma =\sqrt{\frac{\sum ^{n}_{i=1}\left ( x_{i} - \mu  \right )^{2}}{n}}$$
+
+Formula para desviación estándar muestral:
+
+$$\delta =\sqrt{\frac{\sum ^{n}_{i=1}\left ( x_{i} - \bar{x}  \right )^{2}}{n-1}}$$
+
+**Ejemplo**
+
+```{r}
+set.seed(222)
+x <- sample(10:50, size = 50, replace = TRUE)
+x
+```
+
+```{r}
+sqrt(var(x))
+sd(x)
+```
+
+*Datos agrupados*
+
+Formula para desviación estándar poblacional:
+
+$$\sigma =\sqrt{\frac{\sum ^{n}_{i=1}\left ( m_{i} - \mu  \right )^{2}f_{i}}{n}}$$
+
+Formula para desviación estándar muestral:
+
+$$\sigma =\sqrt{\frac{\sum ^{n}_{i=1}\left ( m_{i} - \bar{x}  \right )^{2}f_{i}}{n-1}}$$
+
+**Ejemplo**
+
+```{r}
+set.seed(555)
+peso <- round(rnorm(200, mean = 60, sd = 5), 1)
+interv = cut(x = peso, breaks = seq(43,79, by = 4), include.lowest = TRUE, right = TRUE)
+tb <- tibble(Peso = interv) %>% 
+  group_by(Peso) %>% 
+  summarise(fi = n()) %>% 
+  mutate(
+    mi = seq(45,77, by = 4)
+  ) %>% 
+  relocate(Peso, mi, fi) %>% 
+  mutate(
+    hi = fi/sum(fi),
+    Fi = cumsum(fi),
+    Hi = cumsum(hi),
+    mifi = mi*fi
+  )
+tb
+```
+
+```{r}
+prompeso <- sum(tb$mifi)/200
+prompeso
+```
+
+```{r}
+sqrt(sum((tb$mi - prompeso)^2*tb$fi)/(199))
+```
+
+## .Coeficiente de variación
+
+El coeficiente de variación es una herramienta estadística que nos ayuda a entender qué tan dispersos están los datos en un grupo. Es decir, qué tan alejados están unos de otros en relación a un punto central, que usualmente es el promedio o media de esos datos.
+
+Formula:
+
+$$CV=\frac{\sigma}{\left|\bar{X} \right|}$$
+
+```{r}
+futbol <- c(2, 3, 4, 0, 5, 0, 1, 1, 5, 2)
+baloncesto <- c(90, 85, 87, 88, 89, 85, 86, 86, 90, 87)
+```
+
+```{r}
+# Rango
+diff(range(futbol))
+diff(range(baloncesto))
+```
+
+```{r}
+# Rango inter cuantílico
+IQR(futbol)
+IQR(baloncesto)
+```
+
+```{r}
+# Varianza
+var(futbol)
+var(baloncesto)
+```
+
+```{r}
+# Desviación estándar
+sd(futbol)
+sd(baloncesto)
+```
+
+```{r}
+# Coeficiente de variación
+sd(futbol)/mean(futbol)
+sd(baloncesto)/mean(baloncesto)
+```
+
+```{r}
+paste0("Cv: ",round(sd(futbol)/mean(futbol)*100,2), "%")
+paste0("Cv: ",round(sd(baloncesto)/mean(baloncesto)*100,2), "%")
+```
+
+# .Medidas de forma
+
+## .Medidas de asimetría
+
+Las **medidas de asimetría** son indicadores estadísticos que nos permiten conocer la distribución de los datos en relación con su simetría. Es decir, nos muestran si los datos tienden a estar sesgados hacia un lado u otro de la media. Estas medidas ayudan a entender si los valores están distribuidos de forma simétrica o si existe un sesgo hacia un extremo (derecho o izquierdo).
+
+Formula:
+
+$$ Asimetria = \frac{media - moda}{\sigma}$$
+
+**Coeficiente de asimetría**
+
+El coeficiente de asimetría (también conocido como coeficiente de sesgo) es una medida estadística que indica el grado y la dirección del sesgo o asimetría de una distribución de datos en relación con su media. Este coeficiente puede ayudar a determinar si una distribución es simétrica o si se sesga hacia la derecha (asimetría positiva) o hacia la izquierda (asimetría negativa).
+
+```{r}
+n <- 1000
+set.seed(123)
+df <- tibble(
+  x1 = rchisq(n = n, df = 7),
+  x2 = rnorm(n = n, mean = 10, sd = 2),
+  x3 = rbeta(n = n, shape1 = 5, shape2 = 2)
+)
+```
+
+```{r}
+df %>% ggplot(aes(x = x1)) +
+  geom_histogram(aes(y = ..density..), bins = 25) +
+  geom_density(color = 4, linewidth = 1) +
+  ggthemes::theme_fivethirtyeight()
+```
+
+```{r}
+df %>% ggplot(aes(x = x2)) +
+  geom_histogram(aes(y = ..density..), bins = 25) +
+  geom_density(color = 4, linewidth = 1) +
+  ggthemes::theme_fivethirtyeight()
+```
+
+```{r}
+df %>% ggplot(aes(x = x3)) +
+  geom_histogram(aes(y = ..density..), bins = 25) +
+  geom_density(color = 4, linewidth = 1) +
+  ggthemes::theme_fivethirtyeight()
+```
+
+Formula del coeficiente de asimetría de Fisher:
+
+$$\gamma _{1} = \frac{\mu _{3}}{\sigma^{3}}$$ $$\mu _{3}=\frac{1}{n}\sum_{i=1}^{n}(x_{i}-\mu)^{3}$$
+
+```{r}
+mu3 <- (1/length(df$x1))*sum((df$x1-mean(df$x1))^3)
+de <- sd(df$x1)
+mu3/de^3
+```
+
+```{r}
+mu3 <- (1/length(df$x2))*sum((df$x2-mean(df$x2))^3)
+de <- sd(df$x2)
+mu3/de^3
+```
+
+```{r}
+mu3 <- (1/length(df$x3))*sum((df$x3-mean(df$x3))^3)
+de <- sd(df$x3)
+mu3/de^3
+```
+
+Formula del coeficiente de asimetría de Pearson:
+
+$$A_{\rho }=\frac{\mu-M_{0}}{\sigma }$$
+
+```{r}
+(mean(df$x1)-as.numeric(modeest::mlv(x = df$x1, method = "meanshift")))/sd(df$x1)
+```
+
+```{r}
+(mean(df$x2)-as.numeric(modeest::mlv(x = df$x2, method = "meanshift")))/sd(df$x2)
+```
+
+```{r}
+(mean(df$x3)-as.numeric(modeest::mlv(x = df$x3, method = "meanshift")))/sd(df$x3)
+```
+
+Formula del coeficiente de asimetría de Bowley-Yule:
+
+$$A_{BY}=\frac{Q_{3/4}+Q_{1/4}-2M_{e}}{Q_{3/4}-Q_{1/4}}$$
+
+```{r}
+as.numeric((quantile(df$x1, 3/4)+quantile(df$x1, 1/4) - 2*median(df$x1))/(quantile(df$x1, 3/4)-quantile(df$x1, 1/4)))
+```
+
+```{r}
+as.numeric((quantile(df$x2, 3/4)+quantile(df$x2, 1/4) - 2*median(df$x2))/(quantile(df$x2, 3/4)-quantile(df$x2, 1/4)))
+```
+
+```{r}
+as.numeric((quantile(df$x3, 3/4)+quantile(df$x3, 1/4) - 2*median(df$x3))/(quantile(df$x3, 3/4)-quantile(df$x3, 1/4)))
+```
+
+Formula del coeficiente de asimetría de R:
+
+```{r}
+e1071::skewness(x = df$x1, type = 3) #R utiliza la formula de Fisher
+```
+
+```{r}
+e1071::skewness(x = df$x2, type = 1) 
+```
+
+```{r}
+e1071::skewness(x = df$x3, type = 2)
+```
+
+## .Medidas de apuntamiento
+
+Son un conjunto de indicadores que se utilizan para describir la forma de una distribución de datos. Estas medidas están relacionadas con la asimetría y la curvatura de la distribución. Específicamente, indican qué tan "puntiaguda" o "plana" es la distribución comparada con una distribución normal.
+
+**Curtosis:** La curtosis se refiere a la medida de la forma de una distribución en comparación con la distribución normal, también conocida como campana de Gauss. A través de esta medida, podemos descubrir si una distribución tiene colas pesadas o ligeras, así como si su pico es más pronunciado o suave. En esencia, nos proporciona información sobre cómo se distribuyen los datos alrededor de la media y la presencia de valores atípicos.
+
+```{r}
+ggplot(data = data.frame(x = c(-5, 5)), aes(x)) +
+  stat_function(fun = dnorm, n = 201, args = list(mean = 0, sd = 1), color = "red") +
+  stat_function(fun = dnorm, n = 201, args = list(mean = 0, sd = 0.5), color = "blue") +
+  stat_function(fun = dnorm, n = 201, args = list(mean = 0, sd = 1.5), color = "orange") +
+  geom_text(x = 2.5, y = 0.65, label = "Leptocúrtica", color = "blue") +
+  geom_text(x = 2.5, y = 0.6, label = "Mesocúrtica", color = "red") +
+  geom_text(x = 2.5, y = 0.55, label = "Platicúrtica", color = "orange") +
+  ggthemes::theme_fivethirtyeight()
+```
+
+```{r}
+N <- 1000
+set.seed(123)
+df <- tibble(
+  M = rnorm(n, mean = 50, sd = 10),
+  P = 2*runif(n, min = 40, max = 60)-50,
+  L = rexp(n, rate = 0.1) + 50
+)
+```
+
+```{r}
+df %>% gather(key = "Tipo", value = "x") %>% 
+  ggplot(aes(x = x, color = Tipo )) +
+  geom_density(linewidth = 1) +
+  scale_x_continuous(limits = c(0,100)) +
+  ggthemes::theme_fivethirtyeight()
+```
+
+Formulas:
+
+$$\beta _{2}=\frac{\mu_{4}}{\sigma ^{4}}$$
+
+$$\mu_{4}= \frac{1}{n}\sum_{i=1}^{n}(x_{i}-\mu)^{4}$$
+
+$$g_{2} = \beta_{2}-3 $$
+
+```{r}
+mu4 <- (1/length(df$M))*sum((df$M-mean(df$M))^4)
+mu4/var(df$M)^2 - 3
+mu4 <- (1/length(df$L))*sum((df$M-mean(df$L))^4)
+mu4/var(df$L)^2 - 3
+mu4 <- (1/length(df$P))*sum((df$P-mean(df$P))^4)
+mu4/var(df$P)^2 -3
+```
+
+```{r}
+df %>% gather(key = "Tipo", value = "x") %>% 
+  group_by(Tipo) %>% 
+  summarise(
+    k = (1/length(x))*sum((x-mean(x))^4)/var(x)^2 - 3
+  )
+```
+
+*Tipo 1*
+
+```{r}
+df %>% gather(key = "Tipo", value = "x") %>%
+  group_by(Tipo) %>% 
+  summarise(
+    k = e1071::kurtosis(x, type = 1)
+  )
+```
+
+*Tipo 2*
+
+```{r}
+df %>% gather(key = "Tipo", value = "x") %>%
+  group_by(Tipo) %>% 
+  summarise(
+    k = e1071::kurtosis(x, type = 2)
+  )
+```
+
+*Tipo 3*
+
+```{r}
+df %>% gather(key = "Tipo", value = "x") %>%
+  group_by(Tipo) %>% 
+  summarise(
+    k = e1071::kurtosis(x, type = 3)
+  )
+```
